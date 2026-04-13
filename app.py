@@ -24,6 +24,44 @@ MODEL_DIR = os.path.join(BASE, 'model_data')
 DB_PATH   = os.path.join(BASE, 'model_data', 'history.db')
 
 # ── Load model ────────────────────────────────────────────────────────────────
+import requests
+
+MODEL_URLS = {
+    "ann": "https://huggingface.co/Alnzh/inflation-prediction-jabar-lstm-ann/resolve/main/ann_weights.weights.h5",
+    "scaler_X": "https://huggingface.co/Alnzh/inflation-prediction-jabar-lstm-ann/resolve/main/scaler_X.pkl",
+    "scaler_y": "https://huggingface.co/Alnzh/inflation-prediction-jabar-lstm-ann/resolve/main/scaler_y.pkl",
+    "encoder": "https://huggingface.co/Alnzh/inflation-prediction-jabar-lstm-ann/resolve/main/label_encoder.pkl",
+    "data": "https://huggingface.co/Alnzh/inflation-prediction-jabar-lstm-ann/resolve/main/inflasi_clean.csv",
+    "history": "https://huggingface.co/Alnzh/inflation-prediction-jabar-lstm-ann/resolve/main/training_history.csv",
+    "test": "https://huggingface.co/Alnzh/inflation-prediction-jabar-lstm-ann/resolve/main/test_results.csv",
+    "metrics": "https://huggingface.co/Alnzh/inflation-prediction-jabar-lstm-ann/resolve/main/metrics.json"
+}
+
+
+MODEL_DIR = os.path.join(BASE, 'model_data')
+
+def download_file(url, path):
+    if not os.path.exists(path):
+        print(f"Downloading {path}...")
+        r = requests.get(url)
+        with open(path, 'wb') as f:
+            f.write(r.content)
+
+def setup_model_files():
+    os.makedirs(MODEL_DIR, exist_ok=True)
+
+    download_file(MODEL_URLS["ann"], os.path.join(MODEL_DIR, "ann_weights.weights.h5"))
+    download_file(MODEL_URLS["scaler_X"], os.path.join(MODEL_DIR, "scaler_X.pkl"))
+    download_file(MODEL_URLS["scaler_y"], os.path.join(MODEL_DIR, "scaler_y.pkl"))
+    download_file(MODEL_URLS["encoder"], os.path.join(MODEL_DIR, "label_encoder.pkl"))
+    download_file(MODEL_URLS["data"], os.path.join(MODEL_DIR, "inflasi_clean.csv"))
+    download_file(MODEL_URLS["history"], os.path.join(MODEL_DIR, "training_history.csv"))
+    download_file(MODEL_URLS["test"], os.path.join(MODEL_DIR, "test_results.csv"))
+    download_file(MODEL_URLS["metrics"], os.path.join(MODEL_DIR, "metrics.json"))
+
+setup_model_files()
+
+
 def build_model():
     m = Sequential([
         Dense(64,  activation='relu', input_shape=(3,)),
