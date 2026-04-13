@@ -1,0 +1,313 @@
+{% extends "base.html" %} {% block title %}Komparasi Kota – InflasiJabar AI{%
+endblock %} {% block page_title %}Komparasi Inflasi Antar Kota{% endblock %} {%
+block content %}
+<!-- Filter -->
+<div class="card border-0 mb-4">
+  <div class="card-body py-2 px-3">
+    <div class="d-flex flex-wrap align-items-end gap-3">
+      <div>
+        <label class="form-label small fw-semibold mb-1">Tahun</label>
+        <select
+          id="selTahun"
+          class="form-select form-select-sm"
+          style="width: 130px"
+        >
+          {% for y in years_available %}
+          <option value="{{ y }}" {% if y =="tahun" %}selected{% endif %}>
+            {{ y }}
+          </option>
+          {% endfor %} {% for y in [2026,2027,2028,2030] %} {% if y not in
+          years_available %}
+          <option value="{{ y }}" {% if y=="tahun" %}selected{% endif %}>
+            {{ y }} ✦
+          </option>
+          {% endif %} {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label small fw-semibold mb-1">Bulan</label>
+        <select
+          id="selBulan"
+          class="form-select form-select-sm"
+          style="width: 145px"
+        >
+          {% for i in range(1,13) %}
+          <option value="{{ i }}" {% if i=="bulan" %}selected{% endif %}>
+            {{ months[i-1] }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button
+        class="btn btn-info btn-sm"
+        id="btnTampilkan"
+        onclick="loadKomparasi()"
+      >
+        <i class="bi bi-funnel me-1"></i>Tampilkan
+      </button>
+      <span class="text-muted" style="font-size: 0.72rem"
+        >✦ = tahun prediksi</span
+      >
+    </div>
+  </div>
+</div>
+
+<!-- Loading state -->
+<div id="loadingState" class="text-center py-5 d-none">
+  <div
+    class="spinner-border text-info mb-3"
+    style="width: 2.5rem; height: 2.5rem"
+  ></div>
+  <div class="fw-semibold text-muted" id="loadingMsg">
+    Memproses prediksi ANN untuk semua wilayah...
+  </div>
+  <div class="text-muted mt-1" style="font-size: 0.75rem">
+    Model menghitung 8 wilayah × 12 bulan, harap tunggu sebentar
+  </div>
+  <div
+    class="progress mt-3 mx-auto"
+    style="width: 260px; height: 4px; background: rgba(255, 255, 255, 0.08)"
+  >
+    <div
+      class="progress-bar bg-info progress-bar-striped progress-bar-animated"
+      style="width: 100%"
+    ></div>
+  </div>
+</div>
+
+<!-- Results (hidden until loaded) -->
+<div id="resultsArea" class="d-none">
+  <div class="row g-3 mb-4">
+    <!-- Bar chart -->
+    <div class="col-12 col-lg-7">
+      <div class="card border-0 h-100">
+        <div
+          class="card-header border-0 pt-3 px-3 fw-semibold"
+          style="font-size: 0.85rem"
+        >
+          <i
+            class="bi bi-bar-chart-horizontal me-2"
+            style="color: var(--teal)"
+          ></i>
+          Peringkat Prediksi — <span id="hdrLabel">–</span>
+        </div>
+        <div class="card-body p-2">
+          <img id="barChart" class="chart-img" src="" alt="" />
+        </div>
+      </div>
+    </div>
+    <!-- Ranking table -->
+    <div class="col-12 col-lg-5">
+      <div class="card border-0 h-100">
+        <div
+          class="card-header border-0 pt-3 px-3 fw-semibold"
+          style="font-size: 0.85rem"
+        >
+          <i class="bi bi-trophy me-2 text-warning"></i>Peringkat Kota
+        </div>
+        <div class="card-body px-0 pb-0">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0" style="font-size: 0.8rem">
+              <thead>
+                <tr>
+                  <th class="px-3">#</th>
+                  <th>Kota / Kab</th>
+                  <th>Prediksi</th>
+                  <th>Aktual</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="rankingBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heatmap -->
+  <div class="card border-0">
+    <div
+      class="card-header border-0 pt-3 px-3 fw-semibold d-flex align-items-center gap-3"
+      style="font-size: 0.85rem"
+    >
+      <span
+        ><i class="bi bi-grid-3x3 me-2" style="color: var(--teal)"></i>Peta
+        Panas Inflasi — <span id="hdrHeat">–</span></span
+      >
+      <div class="d-flex gap-2 ms-auto" style="font-size: 0.68rem">
+        <span
+          style="
+            background: rgba(75, 192, 192, 0.25);
+            padding: 2px 8px;
+            border-radius: 4px;
+          "
+          >≤ 3% Normal</span
+        >
+        <span
+          style="
+            background: rgba(255, 193, 7, 0.25);
+            padding: 2px 8px;
+            border-radius: 4px;
+          "
+          >3–5% Waspada</span
+        >
+        <span
+          style="
+            background: rgba(255, 107, 107, 0.25);
+            padding: 2px 8px;
+            border-radius: 4px;
+          "
+          >> 5% Tinggi</span
+        >
+      </div>
+    </div>
+    <div class="card-body px-3 pb-3 overflow-auto">
+      <table
+        class="table table-sm mb-0"
+        style="font-size: 0.72rem; min-width: 720px"
+        id="heatTable"
+      >
+        <thead id="heatHead"></thead>
+        <tbody id="heatBody"></tbody>
+      </table>
+      <div class="mt-2 text-muted" style="font-size: 0.7rem">
+        <i class="bi bi-info-circle me-1"></i>Semua nilai prediksi ANN dalam
+        persen (%). Klik kolom bulan untuk highlight.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Empty state (initial) -->
+<div
+  id="emptyState"
+  class="card border-0 d-flex align-items-center justify-content-center"
+  style="min-height: 300px"
+>
+  <div class="text-center text-muted py-5">
+    <i
+      class="bi bi-bar-chart-steps d-block mb-3"
+      style="font-size: 2.5rem; opacity: 0.2"
+    ></i>
+    <div class="fw-semibold mb-1">
+      Pilih tahun &amp; bulan, lalu klik Tampilkan
+    </div>
+    <div class="small">
+      Model ANN akan memprediksi inflasi semua kota sekaligus
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  const MONTHS = {{ months | tojson }};
+  const BADGE_COLORS = { success:'#22c55e', info:'#4BC0C0', warning:'#FFC107', danger:'#FF6B6B', orange:'#FF9F40' };
+
+  const loadingMsgs = [
+    'Memproses prediksi ANN untuk seluruh wilayah...',
+    'Model menghitung pola dari data 2015–2025...',
+    'Membangun visualisasi peringkat...',
+    'Hampir selesai, menyusun heatmap...'
+  ];
+  let msgIdx = 0, msgTimer;
+
+  async function loadKomparasi() {
+    const tahun = document.getElementById('selTahun').value;
+    const bulan = document.getElementById('selBulan').value;
+
+    // Show loading
+    document.getElementById('emptyState').classList.add('d-none');
+    document.getElementById('resultsArea').classList.add('d-none');
+    document.getElementById('loadingState').classList.remove('d-none');
+    document.getElementById('btnTampilkan').disabled = true;
+
+    msgIdx = 0;
+    document.getElementById('loadingMsg').textContent = loadingMsgs[0];
+    msgTimer = setInterval(() => {
+      msgIdx = (msgIdx + 1) % loadingMsgs.length;
+      document.getElementById('loadingMsg').textContent = loadingMsgs[msgIdx];
+    }, 1800);
+
+    try {
+      const res  = await fetch(`/api/komparasi?tahun=${tahun}&bulan=${bulan}`);
+      const data = await res.json();
+      renderResults(data);
+    } catch(e) {
+      alert('Gagal memuat data: ' + e);
+    } finally {
+      clearInterval(msgTimer);
+      document.getElementById('loadingState').classList.add('d-none');
+      document.getElementById('btnTampilkan').disabled = false;
+    }
+  }
+
+  function heatColor(v) {
+    if (v === null) return ['rgba(108,117,125,.12)','#6b7280'];
+    if (v > 5)  return ['rgba(255,107,107,.25)','#FF6B6B'];
+    if (v > 3)  return ['rgba(255,193,7,.2)',   '#FFC107'];
+    if (v >= 0) return ['rgba(75,192,192,.2)',  '#4BC0C0'];
+    return ['rgba(153,102,255,.2)', '#9966FF'];
+  }
+
+  function renderResults(data) {
+    const lbl = `${data.bulan_name} ${data.tahun}`;
+    document.getElementById('hdrLabel').textContent = lbl;
+    document.getElementById('hdrHeat').textContent  = `Tahun ${data.tahun}`;
+
+    // Bar chart
+    document.getElementById('barChart').src = `data:image/png;base64,${data.chart}`;
+
+    // Ranking table
+    const medals = ['🥇','🥈','🥉'];
+    const tbody = document.getElementById('rankingBody');
+    tbody.innerHTML = data.rows.map((r, i) => {
+      const medal = medals[i] || (i + 1);
+      const color = BADGE_COLORS[r.badge] || '#4BC0C0';
+      return `<tr>
+        <td class="px-3 fw-bold" style="color:${i<3?color:'#6b7280'}">${medal}</td>
+        <td class="fw-semibold">${r.kota}</td>
+        <td class="fw-bold" style="color:var(--teal)">${r.prediksi}%</td>
+        <td class="text-muted">${r.aktual !== null ? r.aktual + '%' : '–'}</td>
+        <td><span style="background:${color}22;color:${color};border-radius:20px;padding:.2em .6em;font-size:.68rem;font-weight:600;">${r.label}</span></td>
+      </tr>`;
+    }).join('');
+
+    // Heatmap
+    const cities = Object.keys(data.heat);
+    document.getElementById('heatHead').innerHTML = `<tr>
+      <th style="min-width:130px;">Kota / Kab</th>
+      ${MONTHS.map((m,i)=>`<th class="text-center" style="cursor:pointer;" onclick="highlightCol(${i})">${m.slice(0,3)}</th>`).join('')}
+      <th class="text-center">Avg</th>
+    </tr>`;
+
+    document.getElementById('heatBody').innerHTML = cities.map(kota => {
+      const vals = data.heat[kota];
+      const validVals = vals.filter(v => v !== null);
+      const avg = validVals.length ? (validVals.reduce((a,b)=>a+b,0)/validVals.length).toFixed(2) : '–';
+      const cells = vals.map(v => {
+        const [bg, fg] = heatColor(v);
+        return `<td class="text-center"><span style="background:${bg};color:${fg};border-radius:4px;padding:2px 4px;font-size:.69rem;">${v !== null ? v : '–'}</span></td>`;
+      }).join('');
+      const [avgBg, avgFg] = heatColor(parseFloat(avg));
+      return `<tr>
+        <td class="fw-semibold" style="font-size:.75rem;">${kota}</td>
+        ${cells}
+        <td class="text-center fw-bold" style="color:${avgFg};">${avg}%</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('resultsArea').classList.remove('d-none');
+  }
+
+  function highlightCol(idx) {
+    const rows = document.querySelectorAll('#heatBody tr');
+    rows.forEach(row => {
+      const cells = row.querySelectorAll('td');
+      cells.forEach((c,i) => c.style.opacity = (i === idx+1 || i === 0 || i === cells.length-1) ? '1' : '0.35');
+    });
+  }
+
+  // Auto-load on page open
+  window.addEventListener('DOMContentLoaded', loadKomparasi);
+</script>
+{% endblock %}

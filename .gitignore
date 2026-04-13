@@ -1,0 +1,15 @@
+# Mengabaikan folder virtual environment
+venv/
+env/
+.env
+
+# Mengabaikan cache Python
+**/__pycache__/
+*.py[cod]
+
+# Mengabaikan file sistem
+.DS_Store
+Thumbs.db
+
+# Mengabaikan file database lokal (jika ada)
+*.sqlite3

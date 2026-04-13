@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% block title %}Prediksi Inflasi – InflasiJabar AI{% endblock %}
+{% block page_title %}Prediksi Inflasi{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- ── FORM ── -->
+  <div class="col-12 col-xl-3">
+    <div class="card border-0 sticky-top" style="top:70px;">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold">
+        <i class="bi bi-magic me-2" style="color:var(--teal)"></i>Input Prediksi ANN
+      </div>
+      <div class="card-body px-3 pt-2">
+        <form method="POST" id="predictForm">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Kota / Kabupaten</label>
+            <select name="kota" class="form-select form-select-sm">
+              {% for c in cities %}
+              <option value="{{ c }}" {% if result and result.kota==c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col">
+              <label class="form-label small fw-semibold">Tahun</label>
+              <input type="number" name="tahun" class="form-control form-control-sm"
+                     value="{{ result.tahun if result else 2026 }}" min="2015" max="2035"/>
+            </div>
+            <div class="col">
+              <label class="form-label small fw-semibold">Bulan</label>
+              <select name="bulan" class="form-select form-select-sm">
+                {% for i in range(1,13) %}
+                <option value="{{ i }}" {% if result and result.bulan_num==i %}selected{% endif %}>
+                  {{ months[i-1] }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-info btn-sm w-100" id="submitBtn">
+            <i class="bi bi-cpu me-1"></i>Jalankan Prediksi ANN
+          </button>
+        </form>
+
+        {% if result %}
+        <hr class="my-3 opacity-15"/>
+        <!-- Result card -->
+        <div class="text-center py-2">
+          <div class="text-muted small mb-1">Prediksi Model ANN</div>
+          <div style="font-size:2.8rem;font-weight:800;line-height:1;color:var(--teal);">
+            {{ result.nilai }}%
+          </div>
+          <div class="mt-2">
+            <span class="bx bx-{{ result.badge }}">{{ result.label }}</span>
+          </div>
+          <div class="mt-2 text-muted" style="font-size:.75rem;">{{ result.desc }}</div>
+        </div>
+
+        <!-- Mini stats -->
+        <hr class="my-2 opacity-15"/>
+        <div class="row g-2 text-center" style="font-size:.72rem;">
+          <div class="col-6">
+            <div class="text-muted">Peringkat ke-</div>
+            <div class="fw-bold" style="font-size:1.1rem; color:var(--gold);">
+              {{ extra.rank }} / {{ extra.total_cities }}
+            </div>
+            <div class="text-muted" style="font-size:.65rem;">dari semua kota</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted">Hist. rata-rata bulan ini</div>
+            <div class="fw-bold" style="font-size:1.1rem; color:var(--teal);">
+              {{ extra.hist_mean if extra.hist_mean else '–' }}%
+            </div>
+            <div class="text-muted" style="font-size:.65rem;">2015–2025</div>
+          </div>
+          {% if extra.yoy_change is not none %}
+          <div class="col-12">
+            <div class="text-muted">Vs tahun lalu ({{ extra.prev_year }})</div>
+            <div class="fw-bold {% if extra.yoy_change > 0 %}text-danger{% elif extra.yoy_change < 0 %}text-success{% else %}text-muted{% endif %}">
+              {% if extra.yoy_change > 0 %}▲{% elif extra.yoy_change < 0 %}▼{% endif %}
+              {{ "%.2f"|format(extra.yoy_change|abs) }}%
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        <hr class="my-2 opacity-15"/>
+        <div style="font-size:.7rem; color:#6b7280; text-align:center;">
+          <i class="bi bi-database me-1" style="color:var(--teal)"></i>Prediksi ini telah disimpan ke database
+        </div>
+        {% endif %}
+
+        <!-- Info box -->
+        <div class="mt-3 rounded p-2" style="background:rgba(75,192,192,.06);border:1px solid rgba(75,192,192,.18);font-size:.72rem;color:#7a8494;">
+          <i class="bi bi-info-circle me-1" style="color:var(--teal)"></i>
+          Model ANN dilatih dengan data 2015–2025, 3 fitur: kota, tahun, bulan.
+          MAE ≈ {{ metrics.mae }}%.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESULTS ── -->
+  <div class="col-12 col-xl-9">
+    {% if result %}
+
+    <!-- Insight bar -->
+    <div class="card border-0 mb-3">
+      <div class="card-body py-2 px-3">
+        <div class="d-flex flex-wrap align-items-center gap-2" style="font-size:.78rem;">
+          <i class="bi bi-lightbulb text-warning me-1"></i>
+          <strong class="text-light">{{ result.kota }}</strong>
+          <span class="text-muted">—</span>
+          <span class="text-muted">{{ result.bulan }} {{ result.tahun }}</span>
+          {% if extra.rank == 1 %}
+          <span class="bx bx-red ms-1">🔴 Inflasi Tertinggi di Jabar</span>
+          {% elif extra.rank == extra.total_cities %}
+          <span class="bx bx-green ms-1">🟢 Inflasi Terendah di Jabar</span>
+          {% elif extra.rank <= 3 %}
+          <span class="bx bx-orange ms-1">Termasuk 3 Kota Inflasi Tertinggi</span>
+          {% endif %}
+          {% if extra.hist_max and result.nilai > extra.hist_max %}
+          <span class="bx bx-red">⚠️ Melebihi rekor historis ({{ extra.hist_max }}%)</span>
+          {% elif extra.hist_min and result.nilai < extra.hist_min %}
+          <span class="bx bx-green">✨ Di bawah historis terendah ({{ extra.hist_min }}%)</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts grid — 3 grafik, masing-masing 1 baris penuh -->
+    <div class="row g-3 mb-3">
+
+      <!-- Chart 1: Tren Historis & Prediksi -->
+      <div class="col-12">
+        <div class="card border-0">
+          <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.9rem;">
+            <i class="bi bi-graph-up me-2" style="color:var(--teal)"></i>Tren Historis &amp; Prediksi ANN
+            <span class="text-muted ms-1" style="font-size:.75rem;font-weight:400;">2015–{{ result.tahun }} · {{ result.kota }}</span>
+          </div>
+          <div class="card-body p-2">
+            <img src="data:image/png;base64,{{ charts.trend }}" class="w-100" style="border-radius:6px;" alt="Trend"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart 2: Pola Musiman -->
+      <div class="col-12">
+        <div class="card border-0">
+          <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.9rem;">
+            <i class="bi bi-calendar3 me-2" style="color:var(--teal)"></i>Pola Musiman Inflasi
+            <span class="text-muted ms-1" style="font-size:.75rem;font-weight:400;">Rata-rata historis per bulan (2015–2025) · {{ result.kota }}</span>
+          </div>
+          <div class="card-body p-2">
+            <img src="data:image/png;base64,{{ charts.seasonal }}" class="w-100" style="border-radius:6px;" alt="Seasonal"/>
+          </div>
+          <div class="card-footer border-0 px-3 py-2" style="font-size:.75rem; color:#6b7280;">
+            <i class="bi bi-info-circle me-1"></i>
+            Merah = bulan yang diprediksi. Grafik ini menunjukkan pola historis inflasi {{ result.kota }} sepanjang tahun.
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart 3: Prediksi vs Tahun Lalu -->
+      <div class="col-12">
+        <div class="card border-0">
+          <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.9rem;">
+            <i class="bi bi-arrow-left-right me-2" style="color:var(--teal)"></i>Prediksi {{ result.tahun }} vs Aktual {{ extra.prev_year }}
+            <span class="text-muted ms-1" style="font-size:.75rem;font-weight:400;">Perbandingan inflasi bulanan · {{ result.kota }}</span>
+          </div>
+          <div class="card-body p-2">
+            <img src="data:image/png;base64,{{ charts.vs_prev }}" class="w-100" style="border-radius:6px;" alt="vs Prev"/>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Info panels -->
+    <div class="row g-3">
+
+      <!-- Statistik historis bulan ini -->
+      <div class="col-12 col-md-4">
+        <div class="card border-0 h-100">
+          <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+            <i class="bi bi-clipboard-data me-2" style="color:var(--teal)"></i>Statistik Bulan {{ result.bulan }}
+          </div>
+          <div class="card-body px-3">
+            <div class="text-muted small mb-3">Data historis {{ result.kota }} di bulan {{ result.bulan }} (2015–2025)</div>
+            {% for label_s, val_s, c_s in [
+              ('Rata-rata historis', extra.hist_mean, 'teal'),
+              ('Tertinggi sepanjang waktu', extra.hist_max, 'red'),
+              ('Terendah sepanjang waktu', extra.hist_min, 'green'),
+              ('Prediksi ' ~ result.tahun, result.nilai, 'gold'),
+            ] %}
+            <div class="d-flex justify-content-between align-items-center mb-2 py-1 border-bottom border-opacity-10">
+              <span class="text-muted" style="font-size:.78rem;">{{ label_s }}</span>
+              <span class="fw-bold bx bx-{{ c_s }}">{{ val_s if val_s is not none else '–' }}{% if val_s is not none %}%{% endif %}</span>
+            </div>
+            {% endfor %}
+            {% if extra.yoy_change is not none %}
+            <div class="mt-2 rounded p-2" style="background:rgba(75,192,192,.07);font-size:.75rem;">
+              <i class="bi bi-arrow-repeat me-1" style="color:var(--teal)"></i>
+              Dibanding {{ extra.prev_year }}:
+              <strong class="{% if extra.yoy_change > 0 %}text-danger{% elif extra.yoy_change < 0 %}text-success{% else %}text-muted{% endif %}">
+                {% if extra.yoy_change > 0 %}naik{% elif extra.yoy_change < 0 %}turun{% else %}sama{% endif %}
+                {{ "%.2f"|format(extra.yoy_change|abs) }}%
+              </strong>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Peringkat semua kota (tabel) -->
+      <div class="col-12 col-md-4">
+        <div class="card border-0 h-100">
+          <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+            <i class="bi bi-trophy me-2 text-warning"></i>Peringkat Kota — {{ result.bulan }} {{ result.tahun }}
+          </div>
+          <div class="card-body px-0 pb-0">
+            <div class="table-responsive">
+              <table class="table table-sm mb-0" style="font-size:.75rem;">
+                <tbody>
+                  {% for kota_r, val_r in extra.all_preds.items() %}
+                  <tr {% if kota_r == result.kota %}style="background:rgba(75,192,192,.08);"{% endif %}>
+                    <td class="px-3" style="width:24px;color:#6b7280;">{{ loop.index }}</td>
+                    <td class="fw-semibold {% if kota_r == result.kota %}text-info{% endif %}">
+                      {{ kota_r }}
+                      {% if kota_r == result.kota %}<i class="bi bi-arrow-left-short text-info"></i>{% endif %}
+                    </td>
+                    <td class="text-end pe-3 fw-bold">{{ "%.2f"|format(val_r) }}%</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interpretasi & rekomendasi -->
+      <div class="col-12 col-md-4">
+        <div class="card border-0 h-100">
+          <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+            <i class="bi bi-lightbulb me-2 text-warning"></i>Interpretasi &amp; Tips
+          </div>
+          <div class="card-body px-3" style="font-size:.8rem; color:#8e96a3; line-height:1.75;">
+            <p>
+              Prediksi inflasi <strong class="text-light">{{ result.kota }}</strong> bulan
+              <strong class="text-light">{{ result.bulan }} {{ result.tahun }}</strong> adalah
+              <strong style="color:var(--teal);">{{ result.nilai }}%</strong> —
+              masuk kategori <strong class="bx bx-{{ result.badge }}">{{ result.label }}</strong>.
+            </p>
+            {% if result.badge == 'success' %}
+            <p>✅ Inflasi dalam kisaran normal. Harga barang relatif stabil. Cocok untuk perencanaan keuangan jangka menengah.</p>
+            {% elif result.badge == 'warning' %}
+            <p>⚠️ Inflasi agak tinggi. Pertimbangkan menabung lebih atau beralih ke produk lebih hemat. Waspadai kenaikan harga bahan pokok.</p>
+            {% elif result.badge == 'danger' %}
+            <p>🔴 Inflasi tinggi. Daya beli bisa tertekan. Sebaiknya tinjau kembali anggaran belanja dan hindari pengeluaran tidak perlu.</p>
+            {% elif result.badge == 'info' %}
+            <p>💡 Inflasi sangat rendah. Harga sangat stabil. Bisa jadi peluang baik untuk investasi atau belanja besar.</p>
+            {% endif %}
+            <p class="text-muted" style="font-size:.72rem; margin-top:.5rem;">
+              <i class="bi bi-exclamation-circle me-1"></i>
+              Prediksi ini dihasilkan oleh model ANN dan bukan merupakan pernyataan resmi pemerintah.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /row info panels -->
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="card border-0 d-flex align-items-center justify-content-center" style="min-height:420px;">
+      <div class="text-center text-muted py-5">
+        <svg width="64" height="64" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="opacity:.2; margin-bottom:1rem;">
+          <path d="M20 2 L35 11 L35 29 L20 38 L5 29 L5 11 Z" fill="#4BC0C0" opacity=".3"/>
+          <rect x="9" y="22" width="4" height="9" rx="1.5" fill="#4BC0C0" opacity=".5"/>
+          <rect x="15" y="17" width="4" height="14" rx="1.5" fill="#4BC0C0" opacity=".7"/>
+          <rect x="21" y="13" width="4" height="18" rx="1.5" fill="#4BC0C0"/>
+          <rect x="27" y="9"  width="4" height="22" rx="1.5" fill="#4BC0C0"/>
+          <polyline points="11,22 17,17 23,13 29,9" fill="none" stroke="#7ee8e8" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <div class="fw-semibold mb-1" style="font-size:1rem;">Pilih parameter prediksi</div>
+        <div class="small">Pilih kota, tahun, dan bulan di panel kiri, lalu klik <strong>Jalankan Prediksi ANN</strong></div>
+        <div class="mt-3 small text-muted" style="font-size:.75rem;">
+          Model akan menampilkan 3 grafik analisis + interpretasi lengkap
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('predictForm').addEventListener('submit', function(){
+  const btn = document.getElementById('submitBtn');
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Memproses ANN...';
+  btn.disabled = true;
+});
+</script>
+{% endblock %}

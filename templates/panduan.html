@@ -1,0 +1,345 @@
+{% extends "base.html" %} {% block title %}Panduan & Tentang – Inflasi Jabar
+ANN{% endblock %} {% block page_title %}Panduan &amp; Tentang Aplikasi{%
+endblock %} {% block content %}
+<div class="row g-4">
+  <!-- LEFT: Apa itu inflasi -->
+  <div class="col-12 col-lg-7">
+    <!-- Apa itu Inflasi? -->
+    <div class="card border-0 mb-4">
+      <div class="card-header border-0 pt-3 px-4 fw-semibold fs-6">
+        <i class="bi bi-question-circle me-2 text-info"></i>Apa itu Inflasi?
+        (Penjelasan Mudah)
+      </div>
+      <div class="card-body px-4 pb-4" style="line-height: 1.8; color: #b0b8c4">
+        <p>
+          Bayangkan tahun lalu kamu beli
+          <strong class="text-light">semangkuk bakso</strong> seharga
+          <strong class="text-info">Rp 15.000</strong>. Tahun ini, harganya jadi
+          <strong style="color: #ff6b6b">Rp 15.750</strong>. Kenaikan harga
+          inilah yang disebut <strong class="text-light">inflasi</strong>.
+        </p>
+        <p>
+          <strong class="text-light">Inflasi Y-on-Y</strong> (Year-on-Year)
+          artinya perbandingan harga bulan ini dengan bulan yang
+          <em>sama</em> tahun lalu. Jadi, inflasi Maret 2025 = kenaikan harga
+          dari Maret 2024 ke Maret 2025.
+        </p>
+        <div class="row g-3 mt-1">
+          {% set levels = [ ('bi-emoji-smile', '#22c55e', 'rgba(34,197,94,.12)',
+          '0%–3%', 'Normal / Sehat', 'Harga naik sedikit, wajar. Ekonomi
+          berjalan normal. Daya beli masyarakat terjaga.'), ('bi-emoji-neutral',
+          '#FFC107', 'rgba(255,193,7,.12)', '3%–5%', 'Sedang / Waspada', 'Harga
+          mulai terasa naik. Perlu perhatian. Belanja lebih bijak dan hemat.'),
+          ('bi-emoji-frown', '#FF6B6B', 'rgba(255,107,107,.12)', '> 5%', 'Tinggi
+          / Berbahaya', 'Harga naik banyak. Bisa mempersulit masyarakat
+          berpenghasilan rendah. Butuh kebijakan pemerintah.'),
+          ('bi-arrow-down-circle', '#9966FF', 'rgba(153,102,255,.12)', '< 0%',
+          'Deflasi', 'Harga turun. Kedengarannya enak, tapi bisa jadi tanda
+          ekonomi sedang lesu.'), ] %} {% for icon, color, bg, range, label,
+          desc in levels %}
+          <div class="col-12 col-sm-6">
+            <div
+              class="rounded p-3 h-100"
+              style="background:{{ bg }}; border:1px solid {{ color }}22;"
+            >
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <i class="bi {{ icon }} fs-5" style="color:{{ color }};"></i>
+                <span class="fw-bold" style="color:{{ color }};"
+                  >{{ range }}</span
+                >
+              </div>
+              <div
+                class="fw-semibold text-light mb-1"
+                style="font-size: 0.85rem"
+              >
+                {{ label }}
+              </div>
+              <div style="font-size: 0.78rem; opacity: 0.8">{{ desc }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Cara pakai aplikasi -->
+    <div class="card border-0 mb-4">
+      <div class="card-header border-0 pt-3 px-4 fw-semibold fs-6">
+        <i class="bi bi-map me-2 text-info"></i>Cara Menggunakan Aplikasi Ini
+      </div>
+      <div class="card-body px-4 pb-4">
+        {% set steps = [ ('1', 'bi-speedometer2', '#4BC0C0', 'Lihat Dashboard',
+        'Halaman pertama yang muncul. Di sini kamu bisa lihat ringkasan inflasi
+        terkini di Provinsi Jawa Barat — kota mana yang inflasinya paling tinggi
+        dan paling rendah.'), ('2', 'bi-magic', '#FF9F40', 'Coba Prediksi
+        Inflasi', 'Pilih menu "Prediksi Inflasi" di sidebar kiri. Pilih
+        kota/kabupaten, tahun, dan bulan yang ingin diprediksi, lalu klik
+        tombol. Model AI (ANN) akan memperkirakan angka inflasinya.'), ('3',
+        'bi-bar-chart-steps', '#9966FF', 'Bandingkan Antar Kota', 'Menu
+        "Komparasi Kota" menampilkan perbandingan prediksi inflasi semua kota
+        sekaligus dalam satu tabel dan grafik. Kamu juga bisa lihat peta panas
+        (heatmap) untuk semua bulan.'), ('4', 'bi-cloud-upload', '#22c55e',
+        'Upload Data Sendiri', 'Punya data inflasi sendiri? Upload dalam format
+        CSV, dan aplikasi ini akan langsung membandingkan data kamu dengan
+        prediksi model ANN.'), ('5', 'bi-cpu', '#FF6B6B', 'Lihat Cara Kerja
+        AI-nya', 'Menu "Analisis Model ANN" menjelaskan seberapa akurat model AI
+        ini dan menampilkan grafik proses belajarnya (training).'), ] %} {% for
+        num, icon, color, title, desc in steps %}
+        <div class="d-flex gap-3 mb-3">
+          <div
+            class="flex-shrink-0"
+            style="width:36px; height:36px; border-radius:50%; background:{{ color }}22; border:2px solid {{ color }}; display:flex; align-items:center; justify-content:center; font-weight:700; color:{{ color }}; font-size:.85rem;"
+          >
+            {{ num }}
+          </div>
+          <div>
+            <div class="fw-semibold" style="color: #ddd">
+              <i class="bi {{ icon }} me-1" style="color:{{ color }};"></i>{{
+              title }}
+            </div>
+            <div
+              class="text-muted"
+              style="font-size: 0.82rem; line-height: 1.6"
+            >
+              {{ desc }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="card border-0">
+      <div class="card-header border-0 pt-3 px-4 fw-semibold fs-6">
+        <i class="bi bi-chat-dots me-2 text-info"></i>Pertanyaan Umum (FAQ)
+      </div>
+      <div class="card-body px-4 pb-4">
+        <div class="accordion accordion-flush" id="faqAccordion">
+          {% set faqs = [ ('Apakah prediksi ini selalu akurat?', 'Tidak ada
+          prediksi yang 100% akurat. Model ini memiliki rata-rata kesalahan
+          sekitar 0.43% (MAE). Artinya jika prediksi menunjukkan 3.00%, angka
+          aktualnya biasanya antara 2.57%–3.43%. Gunakan sebagai referensi,
+          bukan acuan mutlak.'), ('Data dari mana yang digunakan?', 'Dataset
+          berasal dari data inflasi Y-on-Y (Year-on-Year) resmi 7 Kota di Jawa
+          Barat, periode 2020–2025. Meliputi: Kota Bogor, Sukabumi, Bandung,
+          Cirebon, Bekasi, Depok, Tasikmalaya, serta data agregat Provinsi Jawa
+          Barat.'), ('Apa itu ANN (Artificial Neural Network)?', 'ANN adalah
+          teknologi kecerdasan buatan yang terinspirasi dari cara kerja otak
+          manusia. Komputer "belajar" dari data historis inflasi, menemukan pola
+          tersembunyi, lalu menggunakannya untuk memperkirakan nilai di masa
+          depan.'), ('Bisakah saya memprediksi tahun jauh ke depan seperti
+          2030?', 'Bisa, tapi semakin jauh tahun prediksi, semakin besar
+          kemungkinan ketidakakuratannya. Model ini dilatih data 2020–2025, jadi
+          paling andal untuk prediksi 1–2 tahun ke depan.'), ('Apa bedanya
+          inflasi Kota dan Kabupaten?', 'Secara umum, inflasi di kota besar
+          cenderung lebih tinggi karena aktivitas ekonomi yang lebih padat.
+          Kabupaten biasanya memiliki pola yang berbeda karena struktur ekonomi
+          yang lebih agraris.'), ] %} {% for faq_item in faqs %} {% set i =
+          loop.index0 %} {% set q = faq_item[0] %} {% set a = faq_item[1] %}
+          <div
+            class="accordion-item border-0 mb-2"
+            style="
+              background: rgba(255, 255, 255, 0.03);
+              border-radius: 8px;
+              overflow: hidden;
+            "
+          >
+            <h2 class="accordion-header">
+              <button
+                class="accordion-button collapsed fw-semibold"
+                style="
+                  background: transparent;
+                  font-size: 0.85rem;
+                  color: inherit;
+                "
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#faq{{ i }}"
+              >
+                <i
+                  class="bi bi-chevron-right me-2 text-info"
+                  style="font-size: 0.75rem"
+                ></i>
+                {{ q }}
+              </button>
+            </h2>
+            <div
+              id="faq{{ i }}"
+              class="accordion-collapse collapse"
+              data-bs-parent="#faqAccordion"
+            >
+              <div
+                class="accordion-body pt-0"
+                style="font-size: 0.83rem; color: #9aa0ac; line-height: 1.7"
+              >
+                {{ a }}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Tentang aplikasi & teknologi -->
+  <div class="col-12 col-lg-5">
+    <!-- Tentang -->
+    <div class="card border-0 mb-4">
+      <div class="card-header border-0 pt-3 px-4 fw-semibold fs-6">
+        <i class="bi bi-info-circle me-2 text-info"></i>Tentang Aplikasi
+      </div>
+      <div
+        class="card-body px-4 pb-3"
+        style="font-size: 0.84rem; color: #9aa0ac; line-height: 1.8"
+      >
+        <p>
+          Aplikasi ini dikembangkan sebagai
+          <strong class="text-light"
+            >Tugas 4 – Artificial Neural Networks</strong
+          >
+          mata kuliah Kecerdasan Buatan.
+        </p>
+        <p>
+          Tujuannya adalah menerapkan model ANN untuk memprediksi
+          <strong class="text-light">inflasi Year-on-Year</strong> di 7 Kota
+          &amp; Provinsi Jawa Barat dan menyajikan hasil prediksi dalam aplikasi
+          web yang mudah dipahami.
+        </p>
+        <hr class="opacity-15" />
+        <div class="fw-semibold text-light mb-2">Status Aplikasi</div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <i class="bi bi-person-circle text-info fs-4"></i>
+          <div>
+            <div class="fw-semibold text-light" style="font-size: 0.88rem">
+              Versi 1.0.2 (Stable)
+            </div>
+            <div style="font-size: 0.72rem">Pembaruan Terakhir: April 2026</div>
+          </div>
+        </div>
+        <hr class="opacity-15" />
+        <div class="fw-semibold text-light mb-2">Cakupan Wilayah Data</div>
+        <div style="font-size: 0.84rem">
+          7 Kota Pantauan IHK di Jawa Barat (Bogor, Sukabumi, Bandung, Cirebon,
+          Bekasi, Depok, Tasikmalaya).
+        </div>
+      </div>
+    </div>
+
+    <!-- Teknologi -->
+    <div class="card border-0 mb-4">
+      <div class="card-header border-0 pt-3 px-4 fw-semibold fs-6">
+        <i class="bi bi-stack me-2 text-info"></i>Teknologi yang Digunakan
+      </div>
+      <div class="card-body px-4 pb-3">
+        {% set techs = [ ('bi-lightning-fill', '#FF9F40', 'TensorFlow 2.21 +
+        Keras 3', 'Framework machine learning untuk membangun dan melatih model
+        ANN'), ('bi-code-slash', '#4BC0C0', 'Flask 3', 'Web framework Python
+        ringan dan fleksibel untuk backend'), ('bi-bootstrap', '#9966FF',
+        'Bootstrap 5 + Dasher Theme', 'Tampilan antarmuka web yang responsif
+        dengan fitur dark/light mode'), ('bi-table', '#22c55e', 'Pandas &
+        NumPy', 'Manipulasi dan preprocessing data inflasi'), ('bi-graph-up',
+        '#FF6B6B', 'Matplotlib', 'Visualisasi grafik dan chart prediksi'),
+        ('bi-diagram-3', '#FFC107', 'Scikit-learn', 'Normalisasi data
+        (MinMaxScaler) dan encoding kota (LabelEncoder)'), ] %} {% for icon,
+        color, name, desc in techs %}
+        <div class="d-flex align-items-start gap-3 mb-3">
+          <div
+            class="stat-icon flex-shrink-0"
+            style="background:{{ color }}15; width:34px; height:34px; border-radius:8px;"
+          >
+            <i
+              class="bi {{ icon }}"
+              style="color:{{ color }}; font-size:.95rem;"
+            ></i>
+          </div>
+          <div>
+            <div class="fw-semibold" style="font-size: 0.84rem; color: #ddd">
+              {{ name }}
+            </div>
+            <div class="text-muted" style="font-size: 0.75rem">{{ desc }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Arsitektur singkat -->
+    <div class="card border-0 mb-4">
+      <div class="card-header border-0 pt-3 px-4 fw-semibold fs-6">
+        <i class="bi bi-cpu me-2 text-info"></i>Cara Kerja Model ANN (Sederhana)
+      </div>
+      <div
+        class="card-body px-4 pb-3"
+        style="font-size: 0.82rem; color: #9aa0ac; line-height: 1.8"
+      >
+        <p>
+          Model ANN menerima
+          <strong class="text-light">3 informasi masukan</strong>: nama kota,
+          tahun, dan bulan. Informasi ini diproses melalui beberapa lapisan
+          "neuron" buatan yang mencari pola dari data historis.
+        </p>
+        <div class="d-flex align-items-center gap-1 my-3 flex-wrap">
+          {% for layer in ['Input (3)', 'Dense 64', 'Dense 128', 'Dense 64',
+          'Dense 32', 'Output'] %}
+          <div
+            class="text-center px-2 py-1 rounded"
+            style="
+              background: rgba(75, 192, 192, 0.1);
+              border: 1px solid rgba(75, 192, 192, 0.25);
+              font-size: 0.7rem;
+              color: #4bc0c0;
+            "
+          >
+            {{ layer }}
+          </div>
+          {% if not loop.last %}<i
+            class="bi bi-arrow-right text-muted"
+            style="font-size: 0.7rem"
+          ></i
+          >{% endif %} {% endfor %}
+        </div>
+        <p>
+          Setelah berlatih dari
+          <strong class="text-light">{{ '469' }} data historis</strong>, model
+          mampu memperkirakan inflasi dengan rata-rata kesalahan hanya sekitar
+          <strong class="text-info">0.43%</strong>.
+        </p>
+      </div>
+    </div>
+
+    <!-- Referensi -->
+    <div class="card border-0">
+      <div class="card-header border-0 pt-3 px-4 fw-semibold fs-6">
+        <i class="bi bi-journal-bookmark me-2 text-info"></i>Referensi
+      </div>
+      <div class="card-body px-4 pb-3">
+        {% set refs = [ ('TensorFlow Tutorials',
+        'https://www.tensorflow.org/tutorials'), ('Keras Documentation',
+        'https://keras.io/examples/'), ('OpenData Jawa Barat',
+        'https://opendata.jabarprov.go.id/id'), ('Badan Pusat Statistik',
+        'https://www.bps.go.id/id'), ('Machine Learning Mastery – ANN',
+        'https://machinelearningmastery.com/neural-networks-crash-course/'), ]
+        %} {% for name, url in refs %}
+        <a
+          href="{{ url }}"
+          target="_blank"
+          rel="noopener"
+          class="d-flex align-items-center gap-2 text-decoration-none mb-2"
+          style="font-size: 0.82rem; color: #6b7280; transition: color 0.2s"
+          onmouseover="this.style.color = '#4BC0C0'"
+          onmouseout="this.style.color = '#6b7280'"
+        >
+          <i class="bi bi-link-45deg text-info"></i>{{ name }}
+          <i
+            class="bi bi-box-arrow-up-right ms-auto"
+            style="font-size: 0.65rem"
+          ></i>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

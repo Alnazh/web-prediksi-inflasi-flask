@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – Prediksi Inflasi Jabar ANN{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO BANNER ─────────────────────────────────────────────────────────── -->
+<div class="rounded-3 p-4 mb-4"
+     style="background:linear-gradient(135deg,rgba(75,192,192,.12) 0%,rgba(75,192,192,.04) 100%);
+            border:1px solid rgba(75,192,192,.2);">
+  <div class="row align-items-center">
+    <div class="col-12 col-md-8">
+      <div class="fw-bold mb-1" style="font-size:1.15rem;">
+        <i class="bi bi-graph-up-arrow text-info me-2"></i>Selamat datang di Prediksi Inflasi Jabar
+      </div>
+      <div class="text-muted" style="font-size:.85rem; line-height:1.7;">
+        Aplikasi ini menggunakan <strong class="text-info">Kecerdasan Buatan (ANN)</strong> untuk
+        memperkirakan tingkat inflasi di <strong class="text-light">7 Kota &amp; Provinsi Jawa Barat</strong>.
+        Inflasi adalah ukuran kenaikan harga barang &amp; jasa dari waktu ke waktu.
+        <a href="{{ url_for('panduan') }}" class="text-info ms-1">Pelajari lebih lanjut →</a>
+      </div>
+    </div>
+    <div class="col-12 col-md-4 text-md-end mt-3 mt-md-0">
+      <a href="{{ url_for('predict') }}" class="btn btn-info btn-sm me-2">
+        <i class="bi bi-magic me-1"></i>Coba Prediksi
+      </a>
+      <a href="{{ url_for('komparasi') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-bar-chart-steps me-1"></i>Bandingkan Kota
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ── STAT CARDS ─────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="d-flex align-items-start justify-content-between mb-2">
+        <div class="stat-icon" style="background:rgba(75,192,192,.15);">
+          <i class="bi bi-percent text-info"></i>
+        </div>
+        <span class="badge-{{ avg_badge }}">{{ avg_label }}</span>
+      </div>
+      <div class="fs-3 fw-bold text-info">{{ avg_inflasi }}%</div>
+      <div class="fw-semibold small mb-1">Rata-rata Inflasi {{ latest_year }}</div>
+      <div class="text-muted" style="font-size:.72rem;">{{ avg_desc }}</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="d-flex align-items-start justify-content-between mb-2">
+        <div class="stat-icon" style="background:rgba(255,107,107,.15);">
+          <i class="bi bi-arrow-up-circle" style="color:#FF6B6B;"></i>
+        </div>
+        <span class="badge-red">Tertinggi</span>
+      </div>
+      <div class="fs-3 fw-bold" style="color:#FF6B6B;">{{ max_val }}%</div>
+      <div class="fw-semibold small mb-1">{{ max_kota }}</div>
+      <div class="text-muted" style="font-size:.72rem;">Inflasi tertinggi di tahun {{ latest_year }}</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="d-flex align-items-start justify-content-between mb-2">
+        <div class="stat-icon" style="background:rgba(34,197,94,.15);">
+          <i class="bi bi-arrow-down-circle" style="color:#22c55e;"></i>
+        </div>
+        <span class="badge-green">Terendah</span>
+      </div>
+      <div class="fs-3 fw-bold" style="color:#22c55e;">{{ min_val }}%</div>
+      <div class="fw-semibold small mb-1">{{ min_kota }}</div>
+      <div class="text-muted" style="font-size:.72rem;">Inflasi terendah di tahun {{ latest_year }}</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="d-flex align-items-start justify-content-between mb-2">
+        <div class="stat-icon" style="background:rgba(255,193,7,.15);">
+          <i class="bi bi-database text-warning"></i>
+        </div>
+        <span class="badge-gold">Dataset</span>
+      </div>
+      <div class="fs-3 fw-bold text-warning">{{ total_data }}</div>
+      <div class="fw-semibold small mb-1">Total Data Historis</div>
+      <div class="text-muted" style="font-size:.72rem;">Rekaman inflasi bulanan 2020–2026</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── MODEL ACCURACY BANNER ──────────────────────────────────────────────── -->
+<div class="card border-0 mb-4">
+  <div class="card-body py-2 px-3">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <span class="small fw-semibold me-1">
+        <i class="bi bi-cpu me-1 text-info"></i>Akurasi Model ANN:
+      </span>
+      <span class="badge-teal">
+        <i class="bi bi-bullseye me-1"></i>Rata-rata Kesalahan {{ metrics.mae }}%
+      </span>
+      <span class="badge-gold">
+        <i class="bi bi-layers me-1"></i>{{ metrics.train_samples }} Data Training
+      </span>
+      <span class="badge-teal">
+        <i class="bi bi-check2-circle me-1"></i>{{ metrics.epochs_trained }} Epoch Training
+      </span>
+      <span class="text-muted ms-1" style="font-size:.75rem;">
+        ≈ Prediksi meleset rata-rata hanya {{ metrics.mae }}% dari nilai aktual
+      </span>
+      <a href="{{ url_for('analisis') }}" class="ms-auto btn btn-sm btn-outline-secondary">
+        Detail Model <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ── CHARTS ROW ─────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <!-- Trend chart -->
+  <div class="col-12 col-lg-8">
+    <div class="card border-0 h-100">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold">
+        <i class="bi bi-graph-up-arrow me-2 text-info"></i>
+        Tren Rata-rata Inflasi Provinsi Jawa Barat per Tahun
+        <span class="text-muted ms-2" style="font-size:.72rem; font-weight:400;">
+          — Semakin tinggi angkanya, semakin mahal harga-harga di pasar
+        </span>
+      </div>
+      <div class="card-body px-3 pt-2">
+        <canvas id="trendChart" height="90"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick predict -->
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 h-100">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold">
+        <i class="bi bi-magic me-2 text-info"></i>Prediksi Cepat
+      </div>
+      <div class="card-body px-3">
+        <div class="text-muted mb-3" style="font-size:.78rem;">
+          Pilih kota, tahun, dan bulan untuk mendapatkan prediksi inflasi instan dari model AI.
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Kota / Kabupaten</label>
+          <select class="form-select form-select-sm" id="qKota">
+            {% for c in cities %}
+            <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col">
+            <label class="form-label small fw-semibold">Tahun</label>
+            <input type="number" class="form-control form-control-sm" id="qTahun"
+                   value="2026" min="2020" max="2035" />
+          </div>
+          <div class="col">
+            <label class="form-label small fw-semibold">Bulan</label>
+            <select class="form-select form-select-sm" id="qBulan">
+              {% for i in range(1,13) %}
+              <option value="{{ i }}">{{ months[i-1] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-info btn-sm w-100" onclick="quickPredict()">
+          <i class="bi bi-magic me-1"></i>Prediksi Sekarang
+        </button>
+
+        <div id="qResult" class="mt-3 text-center d-none rounded p-3"
+             style="background:rgba(75,192,192,.07); border:1px solid rgba(75,192,192,.2);">
+          <div class="text-muted small">Prediksi Inflasi AI</div>
+          <div class="fs-1 fw-bold text-info" id="qValue">–</div>
+          <div class="small fw-semibold mt-1" id="qBadgeEl">–</div>
+          <div class="text-muted mt-1" style="font-size:.75rem;" id="qLabel">–</div>
+          <div class="mt-2 text-muted" style="font-size:.72rem;" id="qDesc">–</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── COMPARISON TABLE ───────────────────────────────────────────────────── -->
+<div class="row g-3">
+  <div class="col-12">
+    <div class="card border-0">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold">
+        <i class="bi bi-table me-2 text-info"></i>
+        Perbandingan Rata-rata Inflasi per Kota (2024 vs 2025)
+        <span class="text-muted ms-2" style="font-size:.72rem; font-weight:400;">
+          — Panah merah = naik, hijau = turun dibanding tahun sebelumnya
+        </span>
+      </div>
+      <div class="card-body px-0 pb-0">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th class="px-3">Kota / Kabupaten</th>
+                <th>Rata-rata 2024 (%)</th>
+                <th>Rata-rata 2025 (%)</th>
+                <th>Perubahan</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in city_trend %}
+              {% set v24 = row.get(2024, None) %}
+              {% set v25 = row.get(2025, None) %}
+              <tr>
+                <td class="px-3 fw-semibold">{{ row['Kota'] }}</td>
+                <td>{% if v24 %}{{ "%.2f"|format(v24) }}{% else %}<span class="text-muted">–</span>{% endif %}</td>
+                <td>{% if v25 %}{{ "%.2f"|format(v25) }}{% else %}<span class="text-muted">–</span>{% endif %}</td>
+                <td>
+                  {% if v24 and v25 %}
+                    {% set diff = v25 - v24 %}
+                    {% if diff > 0 %}
+                      <span class="badge-red"><i class="bi bi-arrow-up-short"></i>+{{ "%.2f"|format(diff) }}</span>
+                    {% elif diff < 0 %}
+                      <span class="badge-green"><i class="bi bi-arrow-down-short"></i>{{ "%.2f"|format(diff) }}</span>
+                    {% else %}
+                      <span class="badge-gold">Stabil</span>
+                    {% endif %}
+                  {% else %}<span class="text-muted small">Data tidak lengkap</span>{% endif %}
+                </td>
+                <td>
+                  {% if v25 %}
+                    {% if v25 > 5 %}<span class="badge-red">Tinggi</span>
+                    {% elif v25 > 3 %}<span class="badge-gold">Sedang</span>
+                    {% elif v25 >= 0 %}<span class="badge-green">Normal</span>
+                    {% else %}<span class="badge-orange">Deflasi</span>{% endif %}
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="px-3 py-2 text-muted" style="font-size:.72rem;">
+          <i class="bi bi-info-circle me-1"></i>
+          Data rata-rata dihitung dari seluruh bulan dalam tahun tersebut.
+          <a href="{{ url_for('komparasi') }}" class="text-info ms-2">Lihat perbandingan lengkap →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const yearlyData = {{ yearly | tojson }};
+const ctx = document.getElementById('trendChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: yearlyData.map(d => d.Tahun),
+    datasets: [{
+      label: 'Rata-rata Inflasi Y-on-Y (%)',
+      data: yearlyData.map(d => parseFloat(d.Inflasi.toFixed(2))),
+      borderColor: '#4BC0C0',
+      backgroundColor: 'rgba(75,192,192,.1)',
+      borderWidth: 2.5,
+      pointRadius: 5, pointBackgroundColor: '#4BC0C0',
+      tension: 0.35, fill: true
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { labels: { color: '#9aa0ac', boxWidth: 12, font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: '#1e2128', titleColor: '#fff', bodyColor: '#ccc',
+        callbacks: { label: ctx => ` Inflasi: ${ctx.raw}%` }
+      }
+    },
+    scales: {
+      x: { ticks: { color: '#9aa0ac' }, grid: { color: 'rgba(255,255,255,.05)' } },
+      y: {
+        ticks: { color: '#9aa0ac', callback: v => v + '%' },
+        grid: { color: 'rgba(255,255,255,.05)' }
+      }
+    }
+  }
+});
+
+async function quickPredict() {
+  const kota  = document.getElementById('qKota').value;
+  const tahun = document.getElementById('qTahun').value;
+  const bulan = document.getElementById('qBulan').value;
+  const res = await fetch('/api/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ kota, tahun, bulan })
+  });
+  const data = await res.json();
+  if (data.success) {
+    const badgeColors = { success: '#22c55e', info: '#4BC0C0', warning: '#FFC107', danger: '#FF6B6B' };
+    document.getElementById('qValue').textContent = data.prediksi + '%';
+    const badgeEl = document.getElementById('qBadgeEl');
+    badgeEl.textContent = data.label;
+    badgeEl.style.color = badgeColors[data.badge] || '#4BC0C0';
+    document.getElementById('qLabel').textContent = `${kota} — ${data.bulan} ${tahun}`;
+    document.getElementById('qDesc').textContent = data.desc;
+    document.getElementById('qResult').classList.remove('d-none');
+  }
+}
+</script>
+{% endblock %}

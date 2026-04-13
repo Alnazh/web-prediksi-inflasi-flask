@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Upload Dataset – ANN Jabar{% endblock %}
+{% block page_title %}Upload Dataset{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Upload Form -->
+  <div class="col-12 col-lg-4">
+    <div class="card border-0">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold">
+        <i class="bi bi-cloud-upload me-2 text-info"></i>Unggah Dataset CSV
+      </div>
+      <div class="card-body px-3">
+        <form method="POST" enctype="multipart/form-data">
+          <!-- Drop zone -->
+          <label for="csvfile" class="d-block text-center py-4 rounded mb-3"
+                 style="border:2px dashed rgba(75,192,192,.4); cursor:pointer; transition:border .2s;"
+                 id="dropZone">
+            <i class="bi bi-file-earmark-arrow-up fs-2 text-info d-block mb-2"></i>
+            <span class="text-muted small">Klik atau seret file CSV ke sini</span>
+            <input type="file" id="csvfile" name="csvfile" accept=".csv" class="d-none" onchange="showFileName(this)" />
+          </label>
+          <div id="fileNameDisplay" class="text-center small text-muted mb-3 d-none"></div>
+
+          <button type="submit" class="btn btn-info w-100">
+            <i class="bi bi-play-fill me-1"></i>Proses dengan Model ANN
+          </button>
+        </form>
+
+        <!-- Format hint -->
+        <div class="mt-3 rounded p-3" style="background:rgba(255,193,7,.07); border:1px solid rgba(255,193,7,.2); font-size:.78rem; color:#9aa0ac;">
+          <div class="fw-semibold text-warning mb-1"><i class="bi bi-info-circle me-1"></i>Format CSV yang diharapkan:</div>
+          <code style="font-size:.72rem; color:#ccc;">Kota, Tahun, Bulan_Num, Inflasi</code>
+          <div class="mt-1 text-muted" style="font-size:.7rem;">
+            Contoh:<br>
+            Kota Bandung, 2025, 3, 2.15<br>
+            Kota Bekasi, 2025, 6, 1.67
+          </div>
+        </div>
+
+        <!-- Error -->
+        {% if error %}
+        <div class="alert alert-danger mt-3 py-2 small">
+          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Summary -->
+        {% if summary %}
+        <div class="mt-3 rounded p-3" style="background:rgba(75,192,192,.07); border:1px solid rgba(75,192,192,.2);">
+          <div class="fw-semibold text-info mb-2 small">Hasil Evaluasi</div>
+          <div class="row g-1 text-center" style="font-size:.78rem;">
+            <div class="col-4">
+              <div class="text-muted">Total Baris</div>
+              <div class="fw-bold text-info">{{ summary.total }}</div>
+            </div>
+            <div class="col-4">
+              <div class="text-muted">MAE</div>
+              <div class="fw-bold" style="color:#FF6B6B;">{{ summary.mae }}%</div>
+            </div>
+            <div class="col-4">
+              <div class="text-muted">Kota Unik</div>
+              <div class="fw-bold text-warning">{{ summary.valid_kota }}</div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Download sample -->
+    <div class="card border-0 mt-3">
+      <div class="card-body px-3 py-2 d-flex align-items-center gap-2">
+        <i class="bi bi-download text-info"></i>
+        <span class="small text-muted flex-grow-1">Unduh template CSV sampel</span>
+        <button class="btn btn-sm btn-outline-info" onclick="downloadSample()">Unduh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Panel -->
+  <div class="col-12 col-lg-8">
+    {% if chart %}
+    <div class="card border-0 mb-4">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold">
+        <i class="bi bi-bullseye me-2 text-info"></i>Scatter Plot Aktual vs Prediksi ANN
+      </div>
+      <div class="card-body p-2">
+        <img src="data:image/png;base64,{{ chart }}" class="chart-img" alt="Scatter Plot" />
+      </div>
+    </div>
+    {% endif %}
+
+    {% if preview %}
+    <div class="card border-0">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-table me-2 text-info"></i>Hasil Prediksi (20 baris pertama)</span>
+        <span class="badge-teal">{{ summary.total }} total baris</span>
+      </div>
+      <div class="card-body px-0 pb-0">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0" style="font-size:.8rem;">
+            <thead>
+              <tr>
+                <th class="px-3">Kota</th>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>Aktual (%)</th>
+                <th>Prediksi ANN (%)</th>
+                <th>|Error| (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in preview %}
+              <tr>
+                <td class="px-3">{{ row.Kota }}</td>
+                <td>{{ row.Tahun }}</td>
+                <td>{{ months[row.Bulan_Num - 1] if row.Bulan_Num else row.Bulan_Num }}</td>
+                <td>{{ "%.2f"|format(row.Inflasi) }}</td>
+                <td class="text-info fw-semibold">{{ "%.2f"|format(row.Prediksi_ANN) if row.Prediksi_ANN else '–' }}</td>
+                <td>
+                  {% if row['Error (%)'] is not none %}
+                    {% if row['Error (%)'] < 0.5 %}
+                      <span class="badge-teal">{{ "%.3f"|format(row['Error (%)']) }}</span>
+                    {% elif row['Error (%)'] < 1.0 %}
+                      <span class="badge-gold">{{ "%.3f"|format(row['Error (%)']) }}</span>
+                    {% else %}
+                      <span class="badge-red">{{ "%.3f"|format(row['Error (%)']) }}</span>
+                    {% endif %}
+                  {% else %}–{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <!-- Empty state -->
+    <div class="card border-0 h-100 d-flex align-items-center justify-content-center"
+         style="min-height:300px;">
+      <div class="text-center text-muted py-5">
+        <i class="bi bi-cloud-upload fs-1 d-block mb-3 opacity-25"></i>
+        <div class="fw-semibold mb-1">Belum ada dataset yang diunggah</div>
+        <div class="small">Unggah file CSV untuk menjalankan prediksi batch dengan model ANN</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showFileName(input) {
+  const display = document.getElementById('fileNameDisplay');
+  if (input.files.length > 0) {
+    display.textContent = '📄 ' + input.files[0].name;
+    display.classList.remove('d-none');
+    document.getElementById('dropZone').style.borderColor = 'rgba(75,192,192,.8)';
+  }
+}
+
+function downloadSample() {
+  const csv = "Kota,Tahun,Bulan_Num,Inflasi\nKota Bandung,2025,1,0.61\nKota Bekasi,2025,2,0.11\nKota Bogor,2025,3,0.89\nKota Depok,2025,4,1.87\nKota Sukabumi,2025,5,2.73\n";
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sample_inflasi.csv';
+  a.click();
+}
+
+// Drag & drop styling
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor='#4BC0C0'; });
+dz.addEventListener('dragleave', () => { dz.style.borderColor='rgba(75,192,192,.4)'; });
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  const dt = e.dataTransfer;
+  document.getElementById('csvfile').files = dt.files;
+  showFileName(document.getElementById('csvfile'));
+});
+</script>
+{% endblock %}

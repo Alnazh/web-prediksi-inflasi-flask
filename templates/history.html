@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Riwayat Prediksi – InflasiJabar AI{% endblock %}
+{% block page_title %}Riwayat Prediksi{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="stat-icon mb-2" style="background:rgba(75,192,192,.15);">
+        <i class="bi bi-clock-history" style="color:var(--teal)"></i>
+      </div>
+      <div class="fs-3 fw-bold" style="color:var(--teal)">{{ stats.total }}</div>
+      <div class="fw-semibold small">Total Prediksi</div>
+      <div class="text-muted" style="font-size:.72rem;">Tersimpan di database</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="stat-icon mb-2" style="background:rgba(255,193,7,.15);">
+        <i class="bi bi-percent text-warning"></i>
+      </div>
+      <div class="fs-3 fw-bold text-warning">{{ stats.avg }}%</div>
+      <div class="fw-semibold small">Rata-rata Prediksi</div>
+      <div class="text-muted" style="font-size:.72rem;">Dari semua query</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="stat-icon mb-2" style="background:rgba(153,102,255,.15);">
+        <i class="bi bi-building" style="color:#9966FF"></i>
+      </div>
+      <div class="fs-3 fw-bold" style="color:#9966FF">
+        {{ stats.top_kota.kota.replace('Kota ','').replace('Kab. ','') if stats.top_kota else '–' }}
+      </div>
+      <div class="fw-semibold small">Kota Paling Dicari</div>
+      <div class="text-muted" style="font-size:.72rem;">
+        {{ stats.top_kota.c ~ ' kali' if stats.top_kota else 'Belum ada' }}
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="stat-icon mb-2" style="background:rgba(255,107,107,.15);">
+          <i class="bi bi-database" style="color:var(--red)"></i>
+        </div>
+        <div class="fw-semibold small mb-1">Kelola Database</div>
+        <div class="text-muted" style="font-size:.72rem;">Hapus semua riwayat</div>
+      </div>
+      <button class="btn btn-outline-danger btn-sm mt-2" onclick="clearAll()">
+        <i class="bi bi-trash me-1"></i>Hapus Semua
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Timeline chart -->
+  {% if timeline %}
+  <div class="col-12 col-lg-8">
+    <div class="card border-0 mb-3">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+        <i class="bi bi-activity me-2" style="color:var(--teal)"></i>Timeline Prediksi Terakhir
+      </div>
+      <div class="card-body px-3 pt-2">
+        <canvas id="timelineChart" height="80"></canvas>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Kota frequency -->
+  {% if kota_counts %}
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 mb-3">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+        <i class="bi bi-bar-chart me-2" style="color:var(--teal)"></i>Frekuensi per Kota
+      </div>
+      <div class="card-body px-0 pb-0">
+        <table class="table table-sm mb-0" style="font-size:.78rem;">
+          <thead><tr><th class="px-3">Kota</th><th class="text-center">Query</th><th class="text-center">Avg (%)</th></tr></thead>
+          <tbody>
+            {% for row in kota_counts %}
+            <tr>
+              <td class="px-3 fw-semibold">{{ row.kota }}</td>
+              <td class="text-center">
+                <span class="bx bx-teal">{{ row.c }}</span>
+              </td>
+              <td class="text-center">{{ "%.2f"|format(row.avg_pred) }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- History table -->
+<div class="card border-0">
+  <div class="card-header border-0 pt-3 px-3 fw-semibold d-flex align-items-center" style="font-size:.85rem;">
+    <i class="bi bi-table me-2" style="color:var(--teal)"></i>Riwayat Prediksi
+    <span class="bx bx-purple ms-2">{{ total }} total</span>
+    <div class="ms-auto d-flex gap-2">
+      {% if page > 1 %}
+      <a href="{{ url_for('history', page=page-1) }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-chevron-left"></i>
+      </a>
+      {% endif %}
+      <span class="btn btn-sm btn-outline-secondary disabled" style="font-size:.72rem;">
+        Hal {{ page }} / {{ ((total-1)//per_page+1) }}
+      </span>
+      {% if page * per_page < total %}
+      <a href="{{ url_for('history', page=page+1) }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-chevron-right"></i>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-body px-0 pb-0">
+    {% if records %}
+    <div class="table-responsive">
+      <table class="table table-sm mb-0" style="font-size:.8rem;">
+        <thead>
+          <tr>
+            <th class="px-3">#</th>
+            <th>Kota</th><th>Bulan</th><th>Tahun</th>
+            <th>Prediksi</th><th>Status</th>
+            <th>Waktu</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+          <tr id="row-{{ r.id }}">
+            <td class="px-3 text-muted">{{ r.id }}</td>
+            <td class="fw-semibold">{{ r.kota }}</td>
+            <td>{{ r.bulan }}</td>
+            <td>{{ r.tahun }}</td>
+            <td class="fw-bold" style="color:var(--teal)">{{ r.prediksi }}%</td>
+            <td>
+              {% set badge_map = {'Normal / Sehat':'bx-green','Sangat Rendah':'bx-teal','Sedang / Waspada':'bx-gold','Tinggi / Berbahaya':'bx-red','Deflasi':'bx-purple'} %}
+              <span class="bx {{ badge_map.get(r.label, 'bx-teal') }}">{{ r.label }}</span>
+            </td>
+            <td class="text-muted" style="font-size:.72rem; white-space:nowrap;">
+              {{ r.created_at[:16] if r.created_at else '–' }}
+            </td>
+            <td class="pe-3">
+              <button class="btn btn-sm btn-outline-danger py-0 px-1" style="font-size:.7rem;"
+                      onclick="deleteRow({{ r.id }})">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-clock-history d-block mb-2" style="font-size:2rem;opacity:.2;"></i>
+      Belum ada riwayat prediksi. Coba gunakan fitur <a href="{{ url_for('predict') }}" class="text-info">Prediksi Inflasi</a>.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if timeline %}
+const tl = {{ timeline | tojson }};
+const ctx = document.getElementById('timelineChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: tl.map(d => d.created_at.slice(0,16)),
+    datasets: [{
+      label: 'Prediksi (%)',
+      data: tl.map(d => d.prediksi),
+      borderColor: '#4BC0C0', backgroundColor: 'rgba(75,192,192,.1)',
+      borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#4BC0C0',
+      tension: 0.35, fill: true
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { labels: { color: '#9aa0ac', boxWidth: 12 } },
+      tooltip: {
+        backgroundColor: '#181c24', titleColor: '#fff', bodyColor: '#ccc',
+        callbacks: {
+          title: items => tl[items[0].dataIndex].kota,
+          label: item => ` ${item.raw}%`
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { color: '#9aa0ac', maxTicksLimit: 8, font:{size:9} }, grid: { color: 'rgba(255,255,255,.04)' } },
+      y: { ticks: { color: '#9aa0ac', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,.04)' } }
+    }
+  }
+});
+{% endif %}
+
+async function deleteRow(id) {
+  if (!confirm('Hapus riwayat ini?')) return;
+  const res = await fetch(`/api/history/delete/${id}`, { method: 'DELETE' });
+  if (res.ok) document.getElementById('row-' + id).remove();
+}
+
+async function clearAll() {
+  if (!confirm('Hapus SEMUA riwayat prediksi? Tindakan ini tidak bisa dibatalkan.')) return;
+  const res = await fetch('/api/history/clear', { method: 'DELETE' });
+  if (res.ok) location.reload();
+}
+</script>
+{% endblock %}

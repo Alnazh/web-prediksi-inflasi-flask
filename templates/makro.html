@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block title %}Ekonomi Makro Jawa Barat – InflasiJabar AI{% endblock %}
+{% block page_title %}Indikator Ekonomi Makro Jawa Barat{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="rounded-3 p-4 mb-4"
+     style="background:linear-gradient(135deg,rgba(34,197,94,.1) 0%,rgba(75,192,192,.06) 100%);
+            border:1px solid rgba(34,197,94,.2);">
+  <div class="row align-items-center">
+    <div class="col-12 col-md-8">
+      <div class="fw-bold mb-1" style="font-size:1.1rem;">
+        <i class="bi bi-bank2 me-2" style="color:#22c55e;"></i>
+        Indikator Makroekonomi Jawa Barat (2022–2025)
+      </div>
+      <div class="text-muted" style="font-size:.83rem;line-height:1.7;">
+        Data resmi dari <strong class="text-light">BPS Provinsi Jawa Barat</strong> meliputi IPM, pertumbuhan ekonomi,
+        kemiskinan, pengangguran, PDRB per kapita, dan rasio Gini.
+        Data ini memberikan <strong class="text-light">konteks makroekonomi</strong> yang memperkuat
+        interpretasi prediksi inflasi.
+      </div>
+    </div>
+    <div class="col-12 col-md-4 mt-3 mt-md-0 text-md-end">
+      <span class="bx bx-green me-2">{{ years|length }} Tahun Data</span>
+      <span class="bx bx-teal">7 Indikator</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── STAT CARDS ── -->
+<div class="row g-3 mb-4">
+  {% set card_defs = [
+    ('ipm',                'bi-person-check',   '#22c55e',  'rgba(34,197,94,.15)',
+     'Indeks Pembangunan Manusia', 'indeks', 'Kualitas hidup masyarakat (kesehatan, pendidikan, pendapatan)'),
+    ('pertumbuhan_ekonomi','bi-graph-up-arrow',  '#4BC0C0',  'rgba(75,192,192,.15)',
+     'Pertumbuhan Ekonomi', '%', 'Laju pertumbuhan PDRB Jawa Barat per tahun'),
+    ('kemiskinan',         'bi-house-exclamation','#FF6B6B', 'rgba(255,107,107,.15)',
+     'Penduduk Miskin', '%', 'Persentase penduduk di bawah garis kemiskinan'),
+    ('pengangguran',       'bi-person-x',        '#FFC107',  'rgba(255,193,7,.15)',
+     'Pengangguran Terbuka', '%', 'Tingkat Pengangguran Terbuka (TPT)'),
+    ('gini',               'bi-arrows-expand',   '#9966FF',  'rgba(153,102,255,.15)',
+     'Rasio Gini', '', 'Ukuran ketimpangan distribusi pendapatan (0=merata, 1=timpang)'),
+    ('pdrb_perkapita',     'bi-currency-dollar',  '#FF9F40',  'rgba(255,159,64,.15)',
+     'PDRB per Kapita', 'Ribu Rp', 'Produk Domestik Regional Bruto dibagi jumlah penduduk'),
+  ] %}
+  {% for key, icon, color, bg, label_s, unit, desc in card_defs %}
+  {% set val_latest = data[key].get(years[-1]) %}
+  {% set val_prev   = data[key].get(years[-2]) if years|length > 1 else None %}
+  {% set delta = (val_latest - val_prev)|round(3) if val_latest and val_prev else None %}
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="stat-card h-100">
+      <div class="stat-icon mb-2" style="background:{{ bg }};">
+        <i class="bi {{ icon }}" style="color:{{ color }};"></i>
+      </div>
+      <div class="fw-bold" style="font-size:1.25rem; color:{{ color }}; line-height:1.1;">
+        {% if val_latest %}
+          {% if key == 'pdrb_perkapita' %}
+            {{ "{:,.0f}".format(val_latest) }}
+          {% else %}
+            {{ val_latest }}
+          {% endif %}
+        {% else %}–{% endif %}
+        <span style="font-size:.65rem; font-weight:400; opacity:.6;">{{ unit }}</span>
+      </div>
+      <div class="fw-semibold small mb-1">{{ label_s }}</div>
+      {% if delta is not none %}
+      <div style="font-size:.7rem;">
+        {% set ts = trend_summary.get(key) %}
+        {% if ts %}
+          {% if ts.is_positive %}
+            <span style="color:#22c55e;">{% if delta > 0 %}▲{% else %}▼{% endif %} {{ delta|abs }} <span class="text-muted">vs {{ years[-2] }}</span></span>
+          {% else %}
+            <span style="color:#FF6B6B;">{% if delta > 0 %}▲{% else %}▼{% endif %} {{ delta|abs }} <span class="text-muted">vs {{ years[-2] }}</span></span>
+          {% endif %}
+        {% endif %}
+      </div>
+      {% endif %}
+      <div class="text-muted mt-1" style="font-size:.65rem; line-height:1.4;">{{ desc }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── TREN CHART ── -->
+<div class="card border-0 mb-4">
+  <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+    <i class="bi bi-graph-up me-2" style="color:#22c55e;"></i>
+    Tren Semua Indikator Makro (Ternormalisasi 0–100)
+    <span class="text-muted ms-2" style="font-size:.7rem;font-weight:400;">
+      — Ternormalisasi agar bisa dibandingkan dalam satu grafik
+    </span>
+  </div>
+  <div class="card-body p-2">
+    <img src="data:image/png;base64,{{ chart_trend }}" class="chart-img"/>
+  </div>
+</div>
+
+<!-- ── ROW: Econ + Poverty ── -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 h-100">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+        <i class="bi bi-activity me-2 text-info"></i>
+        Inflasi vs Pertumbuhan Ekonomi vs Pengangguran
+      </div>
+      <div class="card-body p-2">
+        <img src="data:image/png;base64,{{ chart_econ }}" class="chart-img"/>
+      </div>
+      <div class="card-footer border-0 px-3 py-2 text-muted" style="font-size:.7rem;">
+        Ketika inflasi tinggi, pertumbuhan ekonomi biasanya melambat dan pengangguran bisa meningkat.
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 h-100">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+        <i class="bi bi-people me-2" style="color:#FF6B6B;"></i>
+        Kemiskinan &amp; Ketimpangan (Gini)
+      </div>
+      <div class="card-body p-2">
+        <img src="data:image/png;base64,{{ chart_poverty }}" class="chart-img"/>
+      </div>
+      <div class="card-footer border-0 px-3 py-2 text-muted" style="font-size:.7rem;">
+        Inflasi tinggi berdampak lebih besar pada masyarakat miskin karena pengeluaran mereka lebih banyak untuk kebutuhan pokok.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW: PDRB + IPM ── -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="card border-0">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+        <i class="bi bi-currency-dollar me-2 text-warning"></i>
+        PDRB per Kapita Jawa Barat
+      </div>
+      <div class="card-body p-2">
+        <img src="data:image/png;base64,{{ chart_pdrb }}" class="chart-img"/>
+      </div>
+      <div class="card-footer border-0 px-3 py-2 text-muted" style="font-size:.7rem;">
+        PDRB per kapita terus naik, menunjukkan peningkatan kesejahteraan rata-rata — meski perlu dicermati ketimpangan Gini.
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card border-0">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+        <i class="bi bi-person-check me-2" style="color:#22c55e;"></i>
+        IPM &amp; Pertumbuhan Penduduk
+      </div>
+      <div class="card-body p-2">
+        <img src="data:image/png;base64,{{ chart_ipm }}" class="chart-img"/>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW: Ringkasan tren + Korelasi dengan Inflasi ── -->
+<div class="row g-3">
+
+  <!-- Ringkasan tren -->
+  <div class="col-12 col-md-6">
+    <div class="card border-0 h-100">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+        <i class="bi bi-arrow-up-right-circle me-2" style="color:var(--teal);"></i>
+        Ringkasan Tren {{ years[0] }}–{{ years[-1] }}
+      </div>
+      <div class="card-body px-3 pb-2">
+        {% for key, ts in trend_summary.items() %}
+        <div class="d-flex align-items-start gap-3 py-2 border-bottom border-opacity-10">
+          <div class="flex-shrink-0 mt-1">
+            {% if ts.is_positive %}
+              <span style="color:#22c55e; font-size:1rem;">
+                {% if ts.direction == 'naik' %}▲{% else %}▼{% endif %}
+              </span>
+            {% else %}
+              <span style="color:#FF6B6B; font-size:1rem;">
+                {% if ts.direction == 'naik' %}▲{% else %}▼{% endif %}
+              </span>
+            {% endif %}
+          </div>
+          <div class="flex-grow-1">
+            <div class="fw-semibold" style="font-size:.8rem; color:#ddd;">{{ ts.label }}</div>
+            <div class="text-muted" style="font-size:.73rem;">
+              {{ ts.first }} → <strong class="text-light">{{ ts.last }}</strong>
+              <span class="ms-2 {% if ts.is_positive %}text-success{% else %}text-danger{% endif %}">
+                ({{ '+' if ts.delta > 0 else '' }}{{ ts.delta }} {{ ts.unit }})
+              </span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Korelasi dengan inflasi -->
+  <div class="col-12 col-md-6">
+    <div class="card border-0 h-100">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+        <i class="bi bi-link me-2" style="color:var(--teal);"></i>
+        Korelasi Indikator Makro vs Inflasi Jabar
+      </div>
+      <div class="card-body px-3 pb-2">
+        <div class="text-muted mb-3" style="font-size:.75rem;">
+          Nilai mendekati +1 = bergerak searah dengan inflasi. Mendekati -1 = berlawanan arah.
+        </div>
+        {% for key, c in correlations.items() %}
+        {% set pct = ((c.corr + 1) / 2 * 100)|round|int %}
+        {% set bar_color = '#FF6B6B' if c.corr > 0.3 else ('#22c55e' if c.corr < -0.3 else '#FFC107') %}
+        <div class="mb-3">
+          <div class="d-flex justify-content-between mb-1" style="font-size:.77rem;">
+            <span class="text-muted">{{ c.label }}</span>
+            <span class="fw-bold" style="color:{{ bar_color }};">{{ c.corr }}</span>
+          </div>
+          <div class="position-relative" style="height:6px;background:rgba(255,255,255,.07);border-radius:3px;">
+            <!-- center line -->
+            <div style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:#555;"></div>
+            {% if c.corr >= 0 %}
+            <div style="position:absolute;left:50%;width:{{ (c.corr*50)|round|int }}%;height:6px;
+                        background:{{ bar_color }};border-radius:0 3px 3px 0;"></div>
+            {% else %}
+            <div style="position:absolute;right:50%;width:{{ (c.corr|abs*50)|round|int }}%;height:6px;
+                        background:{{ bar_color }};border-radius:3px 0 0 3px;"></div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+        <div class="mt-3 rounded p-2" style="background:rgba(75,192,192,.07);border:1px solid rgba(75,192,192,.15);font-size:.72rem;color:#8e96a3;">
+          <i class="bi bi-info-circle me-1" style="color:var(--teal);"></i>
+          Korelasi dihitung dari data tahunan 2022–2025 (4 titik data), sehingga bersifat indikatif, bukan konklusif.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /row -->
+
+<!-- ── Data tabel lengkap ── -->
+<div class="card border-0 mt-4">
+  <div class="card-header border-0 pt-3 px-3 fw-semibold" style="font-size:.85rem;">
+    <i class="bi bi-table me-2" style="color:var(--teal);"></i>
+    Tabel Lengkap Indikator Makro Ekonomi Jawa Barat
+  </div>
+  <div class="card-body px-0 pb-0">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0" style="font-size:.81rem;">
+        <thead>
+          <tr>
+            <th class="px-3">Indikator</th>
+            {% for y in years %}
+            <th class="text-center">{{ y }}</th>
+            {% endfor %}
+            <th class="text-center">Tren</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set row_defs = [
+            ('ipm',                'IPM',                  'bi-person-check',    '#22c55e'),
+            ('pertumbuhan_ekonomi','Pertumbuhan Ekonomi',  'bi-graph-up-arrow',  '#4BC0C0'),
+            ('pertumbuhan_penduduk','Pertumbuhan Penduduk','bi-people',          '#FF9F40'),
+            ('kemiskinan',         'Penduduk Miskin (%)',  'bi-house-exclamation','#FF6B6B'),
+            ('pengangguran',       'Pengangguran (%)',     'bi-person-x',        '#FFC107'),
+            ('gini',               'Rasio Gini',           'bi-arrows-expand',   '#9966FF'),
+            ('pdrb_perkapita',     'PDRB per Kapita',      'bi-currency-dollar', '#22c55e'),
+          ] %}
+          {% for key, lbl, icon, color in row_defs %}
+          {% set ts = trend_summary.get(key) %}
+          <tr>
+            <td class="px-3">
+              <i class="bi {{ icon }} me-1" style="color:{{ color }};"></i>
+              <span class="fw-semibold">{{ lbl }}</span>
+              <div class="text-muted" style="font-size:.65rem;">{{ labels.get(key,'') }}</div>
+            </td>
+            {% for y in years %}
+            {% set v = data[key].get(y) %}
+            <td class="text-center fw-semibold" style="color:{{ color }};">
+              {% if v %}
+                {% if key == 'pdrb_perkapita' %}{{ "{:,.0f}".format(v) }}{% else %}{{ v }}{% endif %}
+              {% else %}<span class="text-muted">–</span>{% endif %}
+            </td>
+            {% endfor %}
+            <td class="text-center">
+              {% if ts %}
+                <span style="font-size:.75rem;color:{% if ts.is_positive %}#22c55e{% else %}#FF6B6B{% endif %};">
+                  {% if ts.direction == 'naik' %}▲{% elif ts.direction == 'turun' %}▼{% else %}–{% endif %}
+                  {{ ts.delta|abs }}
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="px-3 py-2 text-muted" style="font-size:.7rem;">
+      <i class="bi bi-info-circle me-1"></i>
+      Sumber: BPS Provinsi Jawa Barat. Data PDRB dalam Ribu Rupiah.
+      <a href="{{ url_for('predict') }}" class="text-info ms-2">
+        Lihat pengaruhnya pada prediksi inflasi →
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,1 @@
+{"mae": 0.4873, "rmse": 0.606, "mse": 0.3672, "train_samples": 739, "val_samples": 158, "test_samples": 159, "epochs_trained": 168}

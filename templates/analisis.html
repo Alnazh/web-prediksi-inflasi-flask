@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Analisis Model – ANN Jabar{% endblock %}
+{% block page_title %}Analisis Model ANN{% endblock %}
+
+{% block content %}
+<!-- Metrics row -->
+<div class="row g-3 mb-4">
+  {% set stats = [
+    ('MAE', metrics.mae|string + '%', 'Mean Absolute Error', 'text-info', 'bi-bullseye', 'rgba(75,192,192,.15)'),
+    ('RMSE', metrics.rmse|string + '%', 'Root Mean Squared Error', 'text-danger', 'bi-exclamation-circle', 'rgba(255,107,107,.15)'),
+    ('Train Set', metrics.train_samples|string, 'Sampel pelatihan (70%)', 'text-success', 'bi-graph-up', 'rgba(40,167,69,.15)'),
+    ('Val Set', metrics.val_samples|string, 'Sampel validasi (15%)', 'text-warning', 'bi-layers', 'rgba(255,193,7,.15)'),
+    ('Test Set', metrics.test_samples|string, 'Sampel pengujian (15%)', 'text-info', 'bi-clipboard-data', 'rgba(75,192,192,.15)'),
+    ('Epochs', metrics.epochs_trained|string, 'Epoch dengan early stopping', 'text-secondary', 'bi-arrow-repeat', 'rgba(108,117,125,.15)'),
+  ] %}
+  {% for label, val, desc, color, icon, bg in stats %}
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="stat-card h-100">
+      <div class="stat-icon mb-2" style="background:{{ bg }};">
+        <i class="bi {{ icon }} {{ color }}"></i>
+      </div>
+      <div class="fs-5 fw-bold {{ color }}">{{ val }}</div>
+      <div class="fw-semibold small">{{ label }}</div>
+      <div class="text-muted" style="font-size:.7rem;">{{ desc }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Charts row -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="card border-0">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold">
+        <i class="bi bi-activity me-2 text-info"></i>Training & Validation Loss
+      </div>
+      <div class="card-body p-2">
+        <img src="data:image/png;base64,{{ loss_chart }}" class="chart-img" alt="Loss Chart" />
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card border-0">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold">
+        <i class="bi bi-bullseye me-2 text-info"></i>Aktual vs Prediksi (Test Set)
+      </div>
+      <div class="card-body p-2">
+        <img src="data:image/png;base64,{{ scatter_chart }}" class="chart-img" alt="Scatter Chart" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-7">
+    <div class="card border-0">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold">
+        <i class="bi bi-bar-chart-horizontal me-2 text-info"></i>Rata-rata Inflasi per Kota/Kab (2020–2025)
+      </div>
+      <div class="card-body p-2">
+        <img src="data:image/png;base64,{{ bar_chart }}" class="chart-img" alt="Bar Chart" />
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-5">
+    <div class="card border-0 h-100">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold">
+        <i class="bi bi-diagram-3 me-2 text-info"></i>Arsitektur ANN
+      </div>
+      <div class="card-body px-3">
+        <table class="table table-sm" style="font-size:.8rem;">
+          <thead><tr><th>Layer</th><th>Neuron</th><th>Aktivasi</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge-teal">Input</span></td><td>3</td><td>–</td></tr>
+            <tr><td>Dense 1</td><td>64</td><td>ReLU</td></tr>
+            <tr><td>Dropout</td><td>–</td><td>0.2</td></tr>
+            <tr><td>Dense 2</td><td>128</td><td>ReLU</td></tr>
+            <tr><td>Dropout</td><td>–</td><td>0.2</td></tr>
+            <tr><td>Dense 3</td><td>64</td><td>ReLU</td></tr>
+            <tr><td>Dense 4</td><td>32</td><td>ReLU</td></tr>
+            <tr><td><span class="badge-red">Output</span></td><td>1</td><td>Linear</td></tr>
+          </tbody>
+        </table>
+        <div class="row g-2 mt-2 text-center" style="font-size:.75rem;">
+          <div class="col-6">
+            <div class="text-muted">Loss</div>
+            <div class="fw-semibold text-info">MSE</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted">Optimizer</div>
+            <div class="fw-semibold text-info">Adam</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted">Split Data</div>
+            <div class="fw-semibold text-warning">70/15/15</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted">Early Stop</div>
+            <div class="fw-semibold text-info">Patience 30</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Training history table -->
+<div class="row g-3">
+  <div class="col-12">
+    <div class="card border-0">
+      <div class="card-header border-0 pt-3 px-3 fw-semibold">
+        <i class="bi bi-table me-2 text-info"></i>10 Epoch Terakhir Training
+      </div>
+      <div class="card-body px-0 pb-0">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0" style="font-size:.8rem;">
+            <thead>
+              <tr>
+                <th class="px-3">Epoch</th>
+                <th>Train Loss (MSE)</th>
+                <th>Val Loss (MSE)</th>
+                <th>Train MAE</th>
+                <th>Val MAE</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in hist_df %}
+              <tr>
+                <td class="px-3 fw-semibold text-info">{{ row.epoch }}</td>
+                <td>{{ "%.6f"|format(row.loss) }}</td>
+                <td>{{ "%.6f"|format(row.val_loss) }}</td>
+                <td>{{ "%.4f"|format(row.mae) }}</td>
+                <td>{{ "%.4f"|format(row.val_mae) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- About the data -->
+<div class="row g-3 mt-1">
+  <div class="col-12">
+    <div class="card border-0">
+      <div class="card-body px-3 py-3">
+        <div class="fw-semibold mb-2"><i class="bi bi-info-circle me-2 text-info"></i>Tentang Dataset & Model</div>
+        <div class="row g-3" style="font-size:.82rem; color:#9aa0ac;">
+          <div class="col-md-4">
+            <div class="fw-semibold text-light mb-1">Sumber Data</div>
+            Dataset inflasi Y-on-Y (Year-on-Year) bulanan dari 7 Kota di Provinsi Jawa Barat,
+            mencakup Kota Bogor, Sukabumi, Bandung, Cirebon, Bekasi, Depok, Tasikmalaya,
+            serta data agregat Provinsi Jawa Barat.
+          </div>
+          <div class="col-md-4">
+            <div class="fw-semibold text-light mb-1">Preprocessing</div>
+            Data dinormalisasi menggunakan <strong class="text-info">MinMaxScaler</strong>.
+            Nama kota diencode dengan <strong class="text-info">LabelEncoder</strong>.
+            Fitur input: kota (encoded), tahun, dan nomor bulan.
+            Data dibagi 70% training, 15% validasi, 15% testing.
+          </div>
+          <div class="col-md-4">
+            <div class="fw-semibold text-light mb-1">Referensi</div>
+            <ul class="mb-0 ps-3">
+              <li><a href="https://www.tensorflow.org/tutorials" class="text-info" target="_blank">TensorFlow Tutorials</a></li>
+              <li><a href="https://keras.io/examples/" class="text-info" target="_blank">Keras Examples</a></li>
+              <li><a href="https://opendata.jabarprov.go.id/id" class="text-info" target="_blank">OpenData Jabar</a></li>
+              <li><a href="https://www.bps.go.id/id" class="text-info" target="_blank">BPS Indonesia</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{
+  "data": {
+    "ipm": {
+      "2022": 73.63,
+      "2023": 74.24,
+      "2024": 74.92,
+      "2025": 75.9,
+      "2026": null
+    },
+    "pertumbuhan_ekonomi": {
+      "2022": 5.45,
+      "2023": 5.0,
+      "2024": 4.95,
+      "2025": 5.32,
+      "2026": null
+    },
+    "pertumbuhan_penduduk": {
+      "2022": 1.22,
+      "2023": 1.18,
+      "2024": 1.13,
+      "2025": 1.06,
+      "2026": null
+    },
+    "kemiskinan": {
+      "2022": 8.06,
+      "2023": 7.62,
+      "2024": 7.46,
+      "2025": 7.02,
+      "2026": null
+    },
+    "pengangguran": {
+      "2022": 8.31,
+      "2023": 7.44,
+      "2024": 6.75,
+      "2025": 6.77,
+      "2026": null
+    },
+    "gini": {
+      "2022": 0.417,
+      "2023": 0.425,
+      "2024": 0.421,
+      "2025": 0.416,
+      "2026": null
+    },
+    "pdrb_perkapita": {
+      "2022": 49136.9,
+      "2023": 52651.05,
+      "2024": 56081.86,
+      "2025": 59864.61,
+      "2026": null
+    }
+  },
+  "labels": {
+    "ipm": "IPM (Indeks Pembangunan Manusia)",
+    "pertumbuhan_ekonomi": "Pertumbuhan Ekonomi (%)",
+    "pertumbuhan_penduduk": "Pertumbuhan Penduduk (%)",
+    "kemiskinan": "Penduduk Miskin (%)",
+    "pengangguran": "Pengangguran Terbuka (%)",
+    "gini": "Rasio Gini",
+    "pdrb_perkapita": "PDRB per Kapita (Ribu Rp)"
+  },
+  "units": {
+    "ipm": "indeks",
+    "pertumbuhan_ekonomi": "%",
+    "pertumbuhan_penduduk": "%",
+    "kemiskinan": "%",
+    "pengangguran": "%",
+    "gini": "rasio",
+    "pdrb_perkapita": "ribu Rp"
+  },
+  "good_direction": {
+    "ipm": "higher",
+    "pertumbuhan_ekonomi": "higher",
+    "pertumbuhan_penduduk": "neutral",
+    "kemiskinan": "lower",
+    "pengangguran": "lower",
+    "gini": "lower",
+    "pdrb_perkapita": "higher"
+  },
+  "years": [
+    "2022",
+    "2023",
+    "2024",
+    "2025"
+  ]
+}
